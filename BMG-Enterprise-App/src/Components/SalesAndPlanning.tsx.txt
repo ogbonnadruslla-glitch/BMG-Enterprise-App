@@ -1,0 +1,264 @@
+import React, { useState } from 'react';
+import { SalesTarget, SalesLog, Product, Currency } from '../types';
+import { formatCurrency, formatDate } from '../utils';
+import { generateAiSalesPlan } from '../services/geminiService';
+
+const Spinner: React.FC = () => (
+    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+);
+
+type ActiveTab = 'Products & Categories' | 'Set Targets' | 'Log Sales' | 'AI Plan';
+
+const SalesAndPlanning: React.FC<{
+  targets: SalesTarget;
+  updateTargets: (targets: SalesTarget) => void;
+  addLog: (log: Omit<SalesLog, 'id'>) => void;
+  logs: SalesLog[];
+  categories: string[];
+  addCategory: (category: string) => void;
+  products: Product[];
+  addProduct: (product: Omit<Product, 'id'>) => void;
+  currency: Currency;
+}> = ({ targets, updateTargets, addLog, logs, categories, addCategory, products, addProduct, currency }) => {
+    const [activeTab, setActiveTab] = useState<ActiveTab>('Products & Categories');
+    
+    // --- State for Forms ---
+    // Log Sales
+    const [logProduct, setLogProduct] = useState(products[0]?.name || '');
+    const [logAmount, setLogAmount] = useState('');
+    const [logDate, setLogDate] = useState(new Date().toISOString().split('T')[0]);
+    const [logNotes, setLogNotes] = useState('');
+
+    // Categories
+    const [newCategory, setNewCategory] = useState('');
+
+    // Products
+    const [productName, setProductName] = useState('');
+    const [productCategory, setProductCategory] = useState(categories[0] || '');
+    const [productPrice, setProductPrice] = useState('');
+    const [productMargin, setProductMargin] = useState('');
+    const [productQuantity, setProductQuantity] = useState('');
+
+    // AI Plan
+    const [aiGoal, setAiGoal] = useState('');
+    const [aiPlan, setAiPlan] = useState('');
+    const [isAiLoading, setIsAiLoading] = useState(false);
+
+
+    const handleTargetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        updateTargets({ ...targets, [name]: Number(value) || 0 });
+    };
+
+    const handleAddCategory = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (newCategory.trim()) {
+            addCategory(newCategory.trim());
+            setNewCategory('');
+        }
+    };
+
+    const handleAddProduct = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (productName && productCategory && productPrice && productMargin && productQuantity) {
+            addProduct({
+                name: productName,
+                category: productCategory,
+                price: parseFloat(productPrice),
+                margin: parseFloat(productMargin),
+                quantity: parseInt(productQuantity, 10)
+            });
+            // Reset form
+            setProductName('');
+            setProductCategory(categories[0] || '');
+            setProductPrice('');
+            setProductMargin('');
+            setProductQuantity('');
+        } else {
+            alert('Please fill in all product fields.');
+        }
+    };
+    
+    const handleLogSale = (e: React.FormEvent) => {
+        e.preventDefault();
+        const selectedProduct = products.find(p => p.name === logProduct);
+        if (logProduct && logAmount && logDate && selectedProduct) {
+             addLog({
+                date: logDate,
+                amount: parseFloat(logAmount),
+                notes: logNotes || `Sale of ${logProduct}`,
+                category: selectedProduct.category,
+                product: selectedProduct.name
+            });
+            // Reset form
+            setLogAmount('');
+            setLogNotes('');
+        } else {
+            alert('Please select a product and enter an amount and date.');
+        }
+    };
+    
+    const handleGenerateAiPlan = async () => {
+        if (!aiGoal.trim()) return;
+        setIsAiLoading(true);
+        setAiPlan('');
+        const plan = await generateAiSalesPlan(aiGoal);
+        setAiPlan(plan);
+        setIsAiLoading(false);
+    };
+
+    const renderContent = () => {
+        switch (activeTab) {
+            case 'Set Targets':
+                return (
+                    <div className="space-y-4">
+                        <h3 className="text-xl font-semibold text-gray-800">Set Your Sales Targets</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                           {Object.keys(targets).map(key => (
+                                <div key={key}>
+                                    <label htmlFor={key} className="block text-sm font-medium text-gray-700 capitalize">{key}</label>
+                                    <input
+                                        type="number"
+                                        name={key}
+                                        id={key}
+                                        value={targets[key as keyof SalesTarget]}
+                                        onChange={handleTargetChange}
+                                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500"
+                                    />
+                                </div>
+                           ))}
+                        </div>
+                    </div>
+                );
+            case 'Products & Categories':
+                return (
+                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div>
+                            <h3 className="text-xl font-semibold text-gray-800 mb-4">Manage Categories</h3>
+                            <form onSubmit={handleAddCategory} className="flex items-center gap-2 mb-4">
+                                <input type="text" value={newCategory} onChange={e => setNewCategory(e.target.value)} placeholder="New category name" className="flex-grow border-gray-300 rounded-md shadow-sm" required />
+                                <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">Add</button>
+                            </form>
+                            <ul className="space-y-2">
+                                {categories.map(cat => <li key={cat} className="px-3 py-2 bg-gray-100 rounded-md text-sm">{cat}</li>)}
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-semibold text-gray-800 mb-4">Add New Product/Service</h3>
+                            <form onSubmit={handleAddProduct} className="space-y-3">
+                                <input type="text" value={productName} onChange={e => setProductName(e.target.value)} placeholder="Product Name" className="w-full border-gray-300 rounded-md" required />
+                                <select value={productCategory} onChange={e => setProductCategory(e.target.value)} className="w-full border-gray-300 rounded-md" required>
+                                    <option value="" disabled>Select Category</option>
+                                    {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                                </select>
+                                <div className="grid grid-cols-3 gap-2">
+                                    <input type="number" value={productPrice} onChange={e => setProductPrice(e.target.value)} placeholder="Price" className="w-full border-gray-300 rounded-md" required />
+                                    <input type="number" value={productMargin} onChange={e => setProductMargin(e.target.value)} placeholder="Margin" className="w-full border-gray-300 rounded-md" required />
+                                    <input type="number" value={productQuantity} onChange={e => setProductQuantity(e.target.value)} placeholder="Quantity" className="w-full border-gray-300 rounded-md" required />
+                                </div>
+                                <button type="submit" className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">Save Product</button>
+                            </form>
+                        </div>
+                        <div className="lg:col-span-2">
+                             <h3 className="text-xl font-semibold text-gray-800 mb-4">Existing Products</h3>
+                             <div className="overflow-x-auto">
+                                <table className="w-full text-sm">
+                                    <thead className="bg-gray-50"><tr><th className="p-2 text-left">Name</th><th className="p-2 text-left">Category</th><th className="p-2 text-right">Price</th><th className="p-2 text-right">Margin</th></tr></thead>
+                                    <tbody>{products.map(p=><tr key={p.id} className="border-b"><td className="p-2">{p.name}</td><td className="p-2">{p.category}</td><td className="p-2 text-right">{formatCurrency(p.price, currency)}</td><td className="p-2 text-right">{formatCurrency(p.margin, currency)}</td></tr>)}</tbody>
+                                </table>
+                            </div>
+                        </div>
+                     </div>
+                );
+            case 'AI Plan':
+                return (
+                    <div>
+                        <h3 className="text-xl font-semibold text-gray-800 mb-2">AI-Powered Sales Plan</h3>
+                        <p className="text-gray-500 mb-4">Describe your primary sales goal, and our AI advisor will generate a strategic plan to help you achieve it.</p>
+                        <div className="flex flex-col md:flex-row items-center gap-2">
+                           <input type="text" value={aiGoal} onChange={e => setAiGoal(e.target.value)} placeholder="e.g., Increase monthly revenue by 20% in the next quarter" className="flex-grow w-full border-gray-300 rounded-md shadow-sm" />
+                           <button onClick={handleGenerateAiPlan} disabled={isAiLoading} className="w-full md:w-auto px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center justify-center gap-2 disabled:bg-green-300">
+                                {isAiLoading && <Spinner />}
+                                {isAiLoading ? 'Generating...' : 'Generate Plan'}
+                           </button>
+                        </div>
+                        {aiPlan && (
+                            <div className="prose prose-sm max-w-none mt-6 border-t pt-4">
+                                <pre className="whitespace-pre-wrap font-sans bg-gray-50 p-4 rounded-md">{aiPlan}</pre>
+                            </div>
+                        )}
+                    </div>
+                );
+            case 'Log Sales':
+                 return (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div>
+                            <h3 className="text-xl font-semibold text-gray-800 mb-4">Log a New Sale</h3>
+                             <form onSubmit={handleLogSale} className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium">Product/Service</label>
+                                    <select value={logProduct} onChange={e => {
+                                        setLogProduct(e.target.value);
+                                        const selected = products.find(p => p.name === e.target.value);
+                                        if (selected) setLogAmount(selected.price.toString());
+                                    }} className="w-full mt-1 border-gray-300 rounded-md" required>
+                                        <option value="" disabled>Select a product</option>
+                                        {products.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+                                    </select>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium">Amount</label>
+                                        <input type="number" value={logAmount} onChange={e => setLogAmount(e.target.value)} className="w-full mt-1 border-gray-300 rounded-md" required />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium">Date</label>
+                                        <input type="date" value={logDate} onChange={e => setLogDate(e.target.value)} className="w-full mt-1 border-gray-300 rounded-md" required />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium">Notes (Optional)</label>
+                                    <textarea value={logNotes} onChange={e => setLogNotes(e.target.value)} rows={3} className="w-full mt-1 border-gray-300 rounded-md"></textarea>
+                                </div>
+                                <button type="submit" className="w-full px-4 py-3 bg-green-600 text-white font-bold rounded-md hover:bg-green-700">Log Sale</button>
+                             </form>
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-semibold text-gray-800 mb-4">Recent Sales</h3>
+                            <ul className="space-y-2 max-h-96 overflow-y-auto">
+                                {logs.slice(0, 10).map(log => (
+                                    <li key={log.id} className="p-3 bg-gray-50 rounded-md flex justify-between items-center">
+                                        <div>
+                                            <p className="font-medium text-gray-800">{log.product || log.notes}</p>
+                                            <p className="text-xs text-gray-500">{formatDate(log.date)}</p>
+                                        </div>
+                                        <p className="font-semibold text-green-600">{formatCurrency(log.amount, currency)}</p>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
+                 );
+        }
+    }
+
+  return (
+    <div className="space-y-6">
+        <h1 className="text-3xl font-bold text-gray-900">Sales & Planning</h1>
+        <div className="border-b border-gray-200">
+             <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+                {(['Products & Categories', 'Set Targets', 'Log Sales', 'AI Plan'] as ActiveTab[]).map(tab => (
+                    <button key={tab} onClick={() => setActiveTab(tab)} className={`${activeTab === tab ? 'border-yellow-500 text-yellow-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}>
+                        {tab}
+                    </button>
+                ))}
+            </nav>
+        </div>
+        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+            {renderContent()}
+        </div>
+    </div>
+  );
+};
+
+export default SalesAndPlanning;

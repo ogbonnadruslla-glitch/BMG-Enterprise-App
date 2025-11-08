@@ -1,0 +1,32 @@
+export const businessCategories = [
+  'Agriculture', 
+  'Retail & E-commerce (Traders, Shops)', 
+  'Personal Services (Fashion, Hair, Laundry)',
+  'Logistics & Transportation',
+  'Technology', 
+  'Healthcare',
+  'Education', 
+  'Manufacturing', 
+  'Real Estate', 
+  'Finance & Insurance',
+  'Hospitality', 
+  'Consulting & Professional Services', 
+  'Other'
+];
+
+export const states = [
+  'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue',
+  'Borno', 'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu',
+  'FCT - Abuja', 'Gombe', 'Imo', 'Jigawa', 'Kaduna', 'Kano', 'Katsina',
+  'Kebbi', 'Kogi', 'Kwara', 'Lagos', 'Nasarawa', 'Niger', 'Ogun', 'Ondo',
+  'Osun', 'Oyo', 'Plateau', 'Rivers', 'Sokoto', 'Taraba', 'Yobe', 'Zamfara'
+];
+
+export const lgas: { [key: string]: string[] } = {
+  'Lagos': ['Agege', 'Ajeromi-Ifelodun', 'Alimosho', 'Amuwo-Odofin', 'Apapa', 'Badagry', 'Epe', 'Eti-Osa', 'Ibeju-Lekki', 'Ifako-Ijaiye', 'Ikeja', 'Ikorodu', 'Kosofe', 'Lagos Island', 'Lagos Mainland', 'Mushin', 'Ojo', 'Oshodi-Isolo', 'Shomolu', 'Surulere'],
+  'Rivers': ['Port Harcourt', 'Obio-Akpor', 'Eleme', 'Gokana', 'Khana', 'Okrika', 'Ogu–Bolo', 'Tai', 'Asari-Toru', 'Akuku-Toru', 'Degema', 'Bonny', 'Andoni', 'Opobo–Nkoro', 'Oyigbo', 'Etche', 'Omuma', 'Ikwerre', 'Emohua', 'Ahoada East', 'Ahoada West', 'Ogba–Egbema–Ndoni', 'Abua–Odual'],
+  'FCT - Abuja': ['Abaji', 'Bwari', 'Gwagwalada', 'Kuje', 'Kwali', 'Municipal Area Council'],
+  'Abia': ["Aba North", "Aba South", "Arochukwu", "Bende", "Ikwuano", "Isiala Ngwa North", "Isiala Ngwa South", "Isuikwuato", "Obi Ngwa", "Ohafia", "Osisioma", "Ugwunagbo", "Ukwa East", "Ukwa West", "Umuahia North", "Umuahia South", "Umu Nneochi"],
+  'Kano': ["Ajingi", "Albasu", "Bagwai", "Bebeji", "Bichi", "Bunkure", "Dala", "Dambatta", "Dawakin Kudu", "Dawakin Tofa", "Doguwa", "Fagge", "Gabasawa", "Garko", "Garun Mallam", "Gaya", "Gezawa", "Gwale", "Gwarzo", "Kabo", "Kano Municipal", "Karaye", "Kibiya", "Kiru", "Kumbotso", "Kunchi", "Kura", "Madobi", "Makoda", "Minjibir", "Nasarawa", "Rano", "Rimin Gado", "Rogo", "Shanono", "Sumaila", "Takai", "Tarauni", "Tofa", "Tsanyawa", "Tudun Wada", "Ungogo", "Warawa", "Wudil"],
+  // Add other states and LGAs as needed
+};

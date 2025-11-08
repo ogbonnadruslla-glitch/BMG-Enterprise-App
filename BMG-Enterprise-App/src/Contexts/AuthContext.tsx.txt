@@ -1,0 +1,92 @@
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { login as apiLogin, signup as apiSignup, AuthCredentials } from '../services/authService';
+
+// This would typically come from your backend/API types
+interface User {
+    id: string;
+    name: string;
+    email: string;
+}
+
+interface AuthContextType {
+    user: User | null;
+    loading: boolean;
+    login: (credentials: AuthCredentials) => Promise<void>;
+    signup: (credentials: AuthCredentials) => Promise<void>;
+    logout: () => void;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+    const [user, setUser] = useState<User | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        // Check for an existing session when the app loads
+        const checkLoggedIn = async () => {
+            try {
+                const storedToken = localStorage.getItem('bmg_token');
+                const storedUser = localStorage.getItem('bmg_user');
+
+                if (storedToken && storedUser) {
+                    // In a real app, you would validate the token with the backend here
+                    // For now, we'll trust the stored user data
+                    setUser(JSON.parse(storedUser));
+                }
+            } catch (error) {
+                console.error("Failed to check login status", error);
+                // Clear session if there's an error
+                localStorage.removeItem('bmg_token');
+                localStorage.removeItem('bmg_user');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        checkLoggedIn();
+    }, []);
+
+    const login = async (credentials: AuthCredentials) => {
+        try {
+            const { token, user } = await apiLogin(credentials);
+            localStorage.setItem('bmg_token', token);
+            localStorage.setItem('bmg_user', JSON.stringify(user));
+            setUser(user);
+        } catch (error) {
+            console.error("Login failed:", error);
+            throw error; // Re-throw to be handled by the form component
+        }
+    };
+
+    const signup = async (credentials: AuthCredentials) => {
+         try {
+            const { token, user } = await apiSignup(credentials);
+            localStorage.setItem('bmg_token', token);
+            localStorage.setItem('bmg_user', JSON.stringify(user));
+            setUser(user);
+        } catch (error) {
+            console.error("Signup failed:", error);
+            throw error;
+        }
+    };
+
+    const logout = () => {
+        setUser(null);
+        localStorage.removeItem('bmg_token');
+        localStorage.removeItem('bmg_user');
+        // Optionally, make an API call to invalidate the token on the server
+    };
+
+    const value = { user, loading, login, signup, logout };
+
+    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
+
+export const useAuth = () => {
+    const context = useContext(AuthContext);
+    if (context === undefined) {
+        throw new Error('useAuth must be used within an AuthProvider');
+    }
+    return context;
+};

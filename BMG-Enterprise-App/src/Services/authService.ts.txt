@@ -1,0 +1,82 @@
+// This file simulates calls to a backend authentication API.
+// In a real application, you would replace the simulated logic with `fetch` calls.
+
+export interface AuthCredentials {
+    email: string;
+    password?: string; // Optional for some flows, but required for login/signup
+    name?: string; // For signup
+}
+
+interface AuthResponse {
+    token: string;
+    user: {
+        id: string;
+        name: string;
+        email: string;
+    };
+}
+
+const FAKE_DELAY = 1000; // Simulate network latency
+
+/**
+ * Simulates a login API call.
+ * In a real app, this would send a POST request to `/api/auth/login`.
+ */
+export const login = (credentials: AuthCredentials): Promise<AuthResponse> => {
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            if (credentials.email.includes('@') && credentials.password === 'password123') {
+                const user = {
+                    id: 'user-123',
+                    name: 'Test User',
+                    email: credentials.email,
+                };
+                resolve({
+                    token: `fake-jwt-token-${Date.now()}`,
+                    user,
+                });
+            } else {
+                reject(new Error('Invalid email or password. (Hint: use password "password123")'));
+            }
+        }, FAKE_DELAY);
+    });
+};
+
+/**
+ * Simulates a signup API call.
+ * In a real app, this would send a POST request to `/api/auth/signup`.
+ */
+export const signup = (credentials: AuthCredentials): Promise<AuthResponse> => {
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            if (credentials.email && credentials.password && credentials.name) {
+                 if (credentials.email.includes('test')) {
+                    reject(new Error('This email address is already taken.'));
+                    return;
+                }
+                 const user = {
+                    id: `user-${Date.now()}`,
+                    name: credentials.name,
+                    email: credentials.email,
+                };
+                resolve({
+                    token: `fake-jwt-token-${Date.now()}`,
+                    user,
+                });
+            } else {
+                reject(new Error('Missing required fields for signup.'));
+            }
+        }, FAKE_DELAY);
+    });
+};
+
+/**
+ * In a real app, you might have a logout endpoint to invalidate the token.
+ */
+export const logout = (): Promise<void> => {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            resolve();
+        }, 500);
+    });
+};

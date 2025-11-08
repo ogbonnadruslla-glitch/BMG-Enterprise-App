@@ -1,0 +1,33 @@
+import type { Currency } from './types';
+
+const currencySymbols: { [key in Currency]: string } = {
+    NGN: '₦',
+    USD: '$',
+    EUR: '€',
+    GBP: '£',
+};
+
+export const formatCurrency = (value: number, currency: Currency): string => {
+    const symbol = currencySymbols[currency] || '₦';
+    return `${symbol}${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
+
+export const formatCurrencyShort = (value: number, currency: Currency): string => {
+    const symbol = currencySymbols[currency] || '₦';
+     return `${symbol}${Math.round(value).toLocaleString()}`;
+}
+
+export const formatNumber = (value: number): string => {
+    return Math.round(value).toLocaleString();
+};
+
+export const formatDate = (dateString: string): string => {
+    try {
+        const date = new Date(dateString);
+        const userTimezoneOffset = date.getTimezoneOffset() * 60000;
+        const correctedDate = new Date(date.getTime() + userTimezoneOffset);
+        return correctedDate.toLocaleDateString('en-GB'); // 'en-GB' format is dd/mm/yyyy
+    } catch (e) {
+        return dateString;
+    }
+};

@@ -1,0 +1,121 @@
+export type Currency = 'NGN' | 'USD' | 'EUR' | 'GBP';
+
+export interface SalesTarget {
+  daily: number;
+  weekly: number;
+  monthly: number;
+  quarterly: number;
+  annually: number;
+}
+
+export interface SalesLog {
+  id: string;
+  date: string; // YYYY-MM-DD
+  amount: number;
+  notes: string;
+  category?: string;
+  product?: string;
+}
+
+export interface Message {
+    sender: 'user' | 'ai' | 'support';
+    text: string;
+    timestamp?: string;
+}
+
+export interface UserProfile {
+    name: string;
+    businessName: string;
+    businessCategory: string;
+    email: string;
+    phone: string;
+    address: string;
+    state: string;
+    lga: string;
+    about: string;
+    currency: Currency;
+}
+
+export interface Product {
+    id: string;
+    name: string;
+    category: string;
+    price: number;
+    margin: number;
+    quantity: number;
+}
+
+export type UserPlan = 'basic' | 'pro';
+
+export interface ProjectionDetails {
+    monthlyCosts: number[];
+    monthlyIncome: number[];
+    monthlyDistribution: number[]; // Users
+    monthlyChannels: number[];
+}
+
+export interface DistributionTargets {
+    users: number;
+    channels: number;
+}
+
+export enum View {
+  DASHBOARD = 'DASHBOARD',
+  PROFILE = 'PROFILE',
+  SALES_AND_PLANNING = 'SALES & PLANNING',
+  REPORTS = 'REPORTS',
+  AI_ADVISOR = 'AI ADVISOR',
+  MARKETING = 'MARKETING',
+  BMG_TEMPLATES = 'BMG TEMPLATES',
+  MEETINGS_AND_CHECK_INS = 'MEETINGS & CHECK-INS',
+  MESSAGES = 'MESSAGES',
+  SUPPORT_CHAT = 'SUPPORT CHAT',
+}
+
+export enum AdFormat {
+  BANNER = 'BANNER',
+  POPUP = 'POPUP',
+  SPONSORED_LISTING = 'SPONSORED_LISTING',
+}
+
+export interface AdContent {
+  title: string;
+  description: string;
+  imageUrl?: string;
+  videoUrl?: string;
+  ctaText: string;
+  ctaLink: string;
+}
+
+export interface AdCampaign {
+  id: string;
+  format: AdFormat;
+  content: AdContent;
+  placement: string; // e.g., 'dashboard-banner', 'global-popup', 'dashboard-feed'
+}
+
+export type ActivityItem = SalesLog | (AdCampaign & { type: 'sponsored' });
+
+export interface Meeting {
+    id: string;
+    date: string;
+    title: string;
+    attendees: string[];
+    actionPoints: { text: string; completed: boolean }[];
+}
+
+export interface MarketingService {
+    id: string;
+    category: 'Digital' | 'Offline';
+    name: string;
+    description: string;
+}
+
+export interface InAppMessage {
+    id: string;
+    sender: string;
+    subject: string;
+    body: string;
+    timestamp: string;
+    isRead: boolean;
+}

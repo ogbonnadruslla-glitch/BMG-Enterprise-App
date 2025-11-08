@@ -1,0 +1,108 @@
+import React, { useState, useEffect } from 'react';
+import { UserProfile } from '../types';
+import { businessCategories, states, lgas } from '../data/nigeria-geo';
+
+interface UserProfileComponentProps {
+  profile: UserProfile;
+  onSave: (profile: UserProfile) => void;
+}
+
+const UserProfileComponent: React.FC<UserProfileComponentProps> = ({ profile, onSave }) => {
+    const [formData, setFormData] = useState<UserProfile>(profile);
+    const [charCount, setCharCount] = useState(profile.about.length);
+
+    useEffect(() => {
+        setFormData(profile);
+    }, [profile]);
+    
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target;
+        if (name === 'about') {
+            if (value.length <= 200) {
+                setCharCount(value.length);
+                setFormData(prev => ({ ...prev, [name]: value }));
+            }
+        } else {
+             setFormData(prev => ({ ...prev, [name]: value }));
+        }
+
+        if (name === 'state') {
+            setFormData(prev => ({...prev, lga: ''})); // Reset LGA when state changes
+        }
+    };
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        onSave(formData);
+        alert('Profile saved successfully!');
+    };
+
+    const availableLgas = lgas[formData.state] || [];
+
+    return (
+        <div className="space-y-6">
+            <h1 className="text-3xl font-bold text-gray-900">My Profile</h1>
+            <form onSubmit={handleSubmit} className="bg-white p-6 md:p-8 rounded-xl border border-gray-200 shadow-sm space-y-6">
+                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                    <p className="text-sm text-green-800">Please provide us with as much information as possible. This will enable us to better understand you and serve your needs.</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Name</label>
+                        <input type="text" name="name" value={formData.name} onChange={handleInputChange} className="mt-1 block w-full border-gray-300 rounded-md" required />
+                    </div>
+                     <div>
+                        <label className="block text-sm font-medium text-gray-700">Name of Business</label>
+                        <input type="text" name="businessName" value={formData.businessName} onChange={handleInputChange} className="mt-1 block w-full border-gray-300 rounded-md" required />
+                    </div>
+                     <div>
+                        <label className="block text-sm font-medium text-gray-700">Business Category</label>
+                        <select name="businessCategory" value={formData.businessCategory} onChange={handleInputChange} className="mt-1 block w-full border-gray-300 rounded-md" required>
+                            {businessCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                        </select>
+                    </div>
+                     <div>
+                        <label className="block text-sm font-medium text-gray-700">Phone Number</label>
+                        <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} className="mt-1 block w-full border-gray-300 rounded-md" required />
+                    </div>
+                     <div>
+                        <label className="block text-sm font-medium text-gray-700">Email Address</label>
+                        <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="mt-1 block w-full border-gray-300 rounded-md" required />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Business Address</label>
+                        <input type="text" name="address" value={formData.address} onChange={handleInputChange} className="mt-1 block w-full border-gray-300 rounded-md" required />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">State</label>
+                        <select name="state" value={formData.state} onChange={handleInputChange} className="mt-1 block w-full border-gray-300 rounded-md" required>
+                             <option value="" disabled>Select a state</option>
+                             {states.map(s => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">LGA</label>
+                        <select name="lga" value={formData.lga} onChange={handleInputChange} className="mt-1 block w-full border-gray-300 rounded-md" required disabled={!formData.state}>
+                            <option value="" disabled>Select LGA</option>
+                            {availableLgas.map(lga => <option key={lga} value={lga}>{lga}</option>)}
+                        </select>
+                    </div>
+                </div>
+                 <div className="col-span-1 md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700">About Business</label>
+                    <textarea name="about" value={formData.about} onChange={handleInputChange} rows={4} className="mt-1 block w-full border-gray-300 rounded-md"></textarea>
+                    <p className="text-right text-xs text-gray-500 mt-1">{charCount} / 200</p>
+                </div>
+
+                <div className="flex justify-end pt-4">
+                     <button type="submit" className="px-8 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-md transition-colors">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    );
+};
+
+export default UserProfileComponent;

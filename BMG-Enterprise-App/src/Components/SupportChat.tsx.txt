@@ -1,0 +1,97 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { Message } from '../types';
+import { generateSupportResponseStream } from '../services/geminiService';
+
+const Spinner: React.FC<{ color?: 'white' | 'gray' }> = ({ color = 'white' }) => (
+    <div className={`animate-spin rounded-full h-5 w-5 border-b-2 ${color === 'white' ? 'border-white' : 'border-gray-600'}`}></div>
+);
+
+const SupportChat: React.FC = () => {
+    const [messages, setMessages] = useState<Message[]>([
+        { sender: 'ai', text: 'Welcome to BMG Support! How can I help you today?' }
+    ]);
+    const [userInput, setUserInput] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const chatContainerRef = useRef<HTMLDivElement>(null);
+    
+    useEffect(() => {
+        chatContainerRef.current?.scrollTo(0, chatContainerRef.current.scrollHeight);
+    }, [messages]);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!userInput.trim() || isLoading) return;
+
+        const userMessage: Message = { sender: 'user', text: userInput };
+        setMessages(prev => [...prev, userMessage]);
+        setUserInput('');
+        setIsLoading(true);
+
+        try {
+            const stream = await generateSupportResponseStream(userInput);
+            setIsLoading(false);
+            setMessages(prev => [...prev, { sender: 'ai', text: "" }]);
+            
+            for await (const chunk of stream) {
+                setMessages(prev => {
+                    const lastMessage = prev[prev.length - 1];
+                    if (lastMessage?.sender === 'ai') {
+                        const updatedMessages = [...prev];
+                        updatedMessages[prev.length - 1] = { ...lastMessage, text: lastMessage.text + chunk.text };
+                        return updatedMessages;
+                    }
+                    return prev;
+                });
+            }
+        } catch (error) {
+            console.error(error);
+            setMessages(prev => [...prev, { sender: 'ai', text: "Sorry, I encountered an error. Please try again." }]);
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <div className="h-full flex flex-col">
+             <h1 className="text-3xl font-bold text-gray-900 px-2 pb-4">Support Chat</h1>
+            <div className="flex-1 min-h-0 bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col mt-4 overflow-hidden">
+                <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-6 space-y-4">
+                    {messages.map((msg, index) => (
+                        <div key={index} className={`flex items-start gap-3 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                            {msg.sender === 'ai' && (
+                                <div className="w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center flex-shrink-0 font-bold text-sm">AI</div>
+                            )}
+                            <div className={`max-w-lg p-3 rounded-xl shadow-sm ${msg.sender === 'user' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-800'}`}>
+                                <pre className="whitespace-pre-wrap font-sans">{msg.text}</pre>
+                            </div>
+                        </div>
+                    ))}
+                    {isLoading && (
+                         <div className="flex justify-start gap-3">
+                             <div className="w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center flex-shrink-0 font-bold text-sm">AI</div>
+                            <div className="max-w-lg p-3 rounded-xl bg-gray-100 text-gray-600 flex items-center">
+                                <Spinner color="gray" /> <span className="ml-2">Thinking...</span>
+                            </div>
+                        </div>
+                    )}
+                </div>
+                <div className="p-4 border-t border-gray-200 bg-white">
+                    <form onSubmit={handleSubmit} className="flex items-center space-x-2 sm:space-x-4">
+                        <input
+                            type="text"
+                            value={userInput}
+                            onChange={(e) => setUserInput(e.target.value)}
+                            placeholder="Type your question here..."
+                            className="flex-1 bg-gray-100 border-gray-200 text-gray-900 rounded-lg px-4 py-2 focus:ring-green-500 focus:border-green-500"
+                            aria-label="Your message"
+                        />
+                        <button type="submit" disabled={isLoading || !userInput.trim()} className="p-2 bg-green-600 hover:bg-green-700 rounded-full text-white disabled:bg-green-300 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default SupportChat;
